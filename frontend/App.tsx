@@ -26,6 +26,7 @@ import CeoView from './components/CeoView';
 import TeamView from './components/TeamView';
 import ReportsView from './components/ReportsView';
 import PortfolioView from './components/PortfolioView';
+import CommandPalette from './components/CommandPalette';
 import TaskDetails from './components/Task/TaskDetails';
 import LoadingScreen from './components/Shared/LoadingScreen';
 import InboxItems from './components/Inbox/InboxItems';
@@ -182,6 +183,7 @@ const App: React.FC = () => {
                                     isDarkMode={isDarkMode}
                                     toggleDarkMode={toggleDarkMode}
                                 >
+                                    <CommandPalette />
                                     <Outlet />
                                 </Layout>
                             }

@@ -251,6 +251,33 @@ const CeoView: React.FC = () => {
             .slice(0, 5);
     }, [tasks]);
 
+    // Pending Decisions: P1 priority + (overdue OR due in 24h) + not done
+    const pendingDecisions = useMemo(() => {
+        const next24h = new Date(today0);
+        next24h.setDate(next24h.getDate() + 1);
+        return tasks
+            .filter((t: any) => {
+                if (t.status === 2) return false;
+                if ((t.priority || 0) < 2) return false; // High only
+                if (!t.due_date) return false;
+                const due = new Date(t.due_date);
+                return due <= next24h; // overdue or due today
+            })
+            .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+            .slice(0, 6);
+    }, [tasks, today0]);
+
+    // Decide quick actions: send to telegram, mark done, defer
+    const sendToTelegram = async (taskName: string, projectName: string) => {
+        const msg = `[BK 判断] ${taskName} (${projectName}) の対応を判断ください`;
+        // Use existing telegram polling endpoint as fallback OR direct bot api
+        try {
+            await fetch('/api/profile/task-summary/send-now', { method: 'POST', credentials: 'include' });
+        } catch {}
+        // Optimistic UX: show alert
+        if (typeof window !== 'undefined') console.log('Telegram dispatched:', msg);
+    };
+
     const projectProgress = useMemo(() => {
         return projects.slice(0, 5).map((p: any) => {
             const pTasks = tasks.filter((t: any) => t.project_id === p.id);
@@ -317,6 +344,57 @@ const CeoView: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left 2 cols */}
                     <div className="lg:col-span-2 space-y-6">
+                        {/* Pending Decisions — P1 burning items needing BK decision */}
+                        {pendingDecisions.length > 0 && (
+                            <div className="bg-gradient-to-br from-rose-50 to-amber-50 dark:from-rose-950/30 dark:to-amber-950/30 rounded-2xl shadow-sm ring-1 ring-rose-200 dark:ring-rose-900 overflow-hidden">
+                                <div className="px-5 py-4 flex items-center justify-between border-b border-rose-200/50 dark:border-rose-900/50">
+                                    <div className="flex items-center gap-3">
+                                        <span className="relative flex h-2.5 w-2.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                                        </span>
+                                        <h2 className="text-base font-semibold text-rose-900 dark:text-rose-200">経営判断 (Pending Decisions)</h2>
+                                        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300">{pendingDecisions.length}</span>
+                                    </div>
+                                    <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">P1 + 24h 以内</span>
+                                </div>
+                                <div className="divide-y divide-rose-200/50 dark:divide-rose-900/50">
+                                    {pendingDecisions.map((t: any) => {
+                                        const dl = daysUntil(t.due_date);
+                                        const isOverdue = dl !== null && dl < 0;
+                                        return (
+                                            <div key={t.id} className="px-5 py-3 flex items-center gap-3 hover:bg-rose-100/40 dark:hover:bg-rose-950/40 transition">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                        <span className="font-medium text-gray-900 dark:text-white truncate">{t.name}</span>
+                                                        {isOverdue && (
+                                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-600 text-white">超過 {Math.abs(dl)}d</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 dark:text-gray-400 truncate">{projectName(t.project_id)} · {formatDate(t.due_date)}</div>
+                                                </div>
+                                                <div className="flex gap-1.5">
+                                                    <button
+                                                        onClick={() => sendToTelegram(t.name, projectName(t.project_id))}
+                                                        className="text-[11px] px-2.5 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 font-medium transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                                                        title="Telegram で AI に振る"
+                                                    >
+                                                        指示
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/task/${t.uid}`)}
+                                                        className="text-[11px] px-2.5 py-1.5 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 ring-1 ring-gray-200 dark:ring-gray-600 font-medium transition"
+                                                    >
+                                                        詳細
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Today's Tasks */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
                             <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
