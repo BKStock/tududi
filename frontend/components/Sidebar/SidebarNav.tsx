@@ -11,6 +11,7 @@ import {
     UserGroupIcon,
     ChartBarIcon,
     Squares2X2Icon,
+    BoltIcon,
 } from '@heroicons/react/24/solid';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { useStore } from '../../store/useStore';
@@ -61,6 +62,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
             links: [
                 { path: '/today', title: t('sidebar.today', 'Today'), icon: <CalendarDaysIcon className="h-5 w-5" />, query: 'type=today' },
                 { path: '/ceo', title: t('sidebar.command', 'Command'), icon: <PresentationChartLineIcon className="h-5 w-5" /> },
+                { path: '/pulse', title: t('sidebar.pulse', 'Pulse'), icon: <BoltIcon className="h-5 w-5" /> },
                 { path: '/portfolio', title: t('sidebar.fleet', 'Fleet'), icon: <Squares2X2Icon className="h-5 w-5" /> },
                 { path: '/team', title: t('sidebar.crew', 'Crew'), icon: <UserGroupIcon className="h-5 w-5" /> },
                 { path: '/reports', title: t('sidebar.sonar', 'Sonar'), icon: <ChartBarIcon className="h-5 w-5" /> },

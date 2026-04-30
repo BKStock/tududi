@@ -27,6 +27,7 @@ import TeamView from './components/TeamView';
 import ReportsView from './components/ReportsView';
 import PortfolioView from './components/PortfolioView';
 import CommandPalette from './components/CommandPalette';
+import PulseView from './components/PulseView';
 import TaskDetails from './components/Task/TaskDetails';
 import LoadingScreen from './components/Shared/LoadingScreen';
 import InboxItems from './components/Inbox/InboxItems';
@@ -197,6 +198,7 @@ const App: React.FC = () => {
                             <Route path="/team" element={<TeamView />} />
                             <Route path="/reports" element={<ReportsView />} />
                             <Route path="/portfolio" element={<PortfolioView />} />
+                            <Route path="/pulse" element={<PulseView />} />
                             <Route
                                 path="/task/:uid"
                                 element={<TaskDetails />}
