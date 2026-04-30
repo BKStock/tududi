@@ -257,8 +257,8 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
         if (!namePart) return email;
         return namePart.charAt(0).toUpperCase() + namePart.slice(1);
     };
-    // BK Dashboard: area-based gradient color
-    const areaName = (project as any).area?.name as string | undefined;
+    // BK Dashboard: area-based gradient color (API uses capitalized 'Area' due to Sequelize)
+    const areaName = ((project as any).Area?.name || (project as any).area?.name) as string | undefined;
     const areaGradients: Record<string, string> = {
         'iGaming': 'from-rose-500 to-pink-600',
         'Intel': 'from-violet-500 to-purple-600',

@@ -57,7 +57,7 @@ const PortfolioView: React.FC = () => {
             const today0 = new Date(); today0.setHours(0, 0, 0, 0);
             const overdue = ts.filter((t: any) => t.status !== 2 && t.due_date && new Date(t.due_date) < today0).length;
             const pct = total ? Math.round((done / total) * 100) : 0;
-            const area = areas.find((a) => a.id === p.area_id);
+            const area = areas.find((a) => a.id === p.area_id) || (p as any).Area;
             const lastUpdate = ts.length ? Math.max(...ts.map((t: any) => new Date(t.updated_at || t.created_at || 0).getTime())) : 0;
             const daysSince = lastUpdate ? Math.round((Date.now() - lastUpdate) / 86400000) : 999;
 
