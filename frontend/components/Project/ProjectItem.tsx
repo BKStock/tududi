@@ -257,11 +257,34 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
         if (!namePart) return email;
         return namePart.charAt(0).toUpperCase() + namePart.slice(1);
     };
+    // BK Dashboard: area-based gradient color
+    const areaName = (project as any).area?.name as string | undefined;
+    const areaGradients: Record<string, string> = {
+        'iGaming': 'from-rose-500 to-pink-600',
+        'Intel': 'from-violet-500 to-purple-600',
+        'SaaS': 'from-blue-500 to-cyan-500',
+        'Media': 'from-amber-500 to-orange-500',
+        'New Biz': 'from-emerald-500 to-teal-600',
+        'Infra': 'from-slate-600 to-gray-700',
+    };
+    const areaBadgeColors: Record<string, string> = {
+        'iGaming': 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900',
+        'Intel': 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900',
+        'SaaS': 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900',
+        'Media': 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900',
+        'New Biz': 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900',
+        'Infra': 'bg-slate-50 text-slate-700 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:ring-slate-700',
+    };
+    const gradientClass = (areaName && areaGradients[areaName]) || 'from-blue-500 to-indigo-600';
+    const areaBadgeClass = (areaName && areaBadgeColors[areaName]) || 'bg-gray-50 text-gray-700 ring-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700';
+    const cardCompletion = getCompletionPercentage();
+    const taskStatus = (project as any).task_status as { total?: number; done?: number; in_progress?: number; not_started?: number } | undefined;
+
     return (
         <div
             className={`${
                 viewMode === 'cards'
-                    ? 'bg-gray-50 dark:bg-gray-900 rounded-lg shadow-md relative flex flex-col group'
+                    ? 'bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 hover:shadow-lg hover:ring-blue-300 dark:hover:ring-blue-700 transition relative flex flex-col group overflow-hidden'
                     : 'bg-gray-50 dark:bg-gray-900 rounded-lg shadow-md relative flex flex-row items-center p-4 group'
             }`}
             style={{
@@ -282,7 +305,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
                         }
                         className="block"
                     >
-                        <div className="relative h-40 overflow-hidden rounded-t-lg bg-gray-200 dark:bg-gray-700">
+                        <div className={`relative h-32 overflow-hidden bg-gradient-to-br ${gradientClass}`}>
                             {project.image_url ? (
                                 <img
                                     src={project.image_url}
@@ -290,7 +313,12 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full bg-gray-200 dark:bg-gray-700"></div>
+                                <div className="w-full h-full flex items-center justify-center relative">
+                                    <span className="text-5xl font-black text-white/30 tracking-tight select-none">
+                                        {getProjectInitials(project.name, 3)}
+                                    </span>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20" />
+                                </div>
                             )}
                             <div className="absolute top-2 right-2 z-20 flex items-center space-x-2">
                                 {project.is_shared && (
@@ -425,8 +453,8 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
             )}
 
             {viewMode === 'cards' && (
-                <div className="flex flex-1 flex-col px-4 pt-3 pb-4">
-                    <div className="space-y-0.5 flex-1">
+                <div className="flex flex-1 flex-col px-4 pt-3 pb-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
                         <Tooltip
                             content={
                                 <div className="max-w-xs space-y-1 text-white">
@@ -440,7 +468,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
                                     )}
                                 </div>
                             }
-                            className="w-full"
+                            className="flex-1 min-w-0"
                         >
                             <Link
                                 to={
@@ -451,38 +479,37 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
                                               .replace(/^-|-$/g, '')}`
                                         : `/project/${project.id}`
                                 }
-                                className="block text-lg font-semibold text-gray-900 dark:text-gray-100 hover:underline truncate"
+                                className="block text-base font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate"
                             >
                                 {project.name}
                             </Link>
                         </Tooltip>
+                        {areaName && (
+                            <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ring-1 ring-inset ${areaBadgeClass}`}>
+                                {areaName}
+                            </span>
+                        )}
                     </div>
-                    <div className="mt-auto pt-2 space-y-2">
+                    <div className="mt-auto space-y-2">
                         <div className="flex items-center space-x-2">
                             <div
-                                className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 cursor-help overflow-hidden"
+                                className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 cursor-help overflow-hidden"
                                 title={
-                                    (project as any).task_status
-                                        ? `${(project as any).task_status.done} of ${(project as any).task_status.total} tasks completed (${getCompletionPercentage()}%)`
-                                        : t(
-                                              'projectItem.completionPercentage',
-                                              {
-                                                  percentage:
-                                                      getCompletionPercentage(),
-                                              }
-                                          )
+                                    taskStatus
+                                        ? `${taskStatus.done} / ${taskStatus.total} tasks (${cardCompletion}%)`
+                                        : t('projectItem.completionPercentage', { percentage: cardCompletion })
                                 }
                             >
                                 <div
-                                    className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                                    className={`h-full rounded-full transition-all duration-300 bg-gradient-to-r ${gradientClass}`}
                                     style={{
-                                        width: `${getCompletionPercentage()}%`,
+                                        width: `${cardCompletion}%`,
                                     }}
                                 ></div>
                             </div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">
-                                {(project as any).task_status
-                                    ? `${(project as any).task_status.done}/${(project as any).task_status.total}`
+                            <span className="text-xs text-gray-700 dark:text-gray-200 font-mono tabular-nums whitespace-nowrap">
+                                {taskStatus
+                                    ? `${taskStatus.done}/${taskStatus.total}`
                                     : '0/0'}
                             </span>
                         </div>
