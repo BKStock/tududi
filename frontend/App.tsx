@@ -23,6 +23,9 @@ import Layout from './Layout';
 import { User } from './entities/User';
 import TasksToday from './components/Task/TasksToday';
 import CeoView from './components/CeoView';
+import TeamView from './components/TeamView';
+import ReportsView from './components/ReportsView';
+import PortfolioView from './components/PortfolioView';
 import TaskDetails from './components/Task/TaskDetails';
 import LoadingScreen from './components/Shared/LoadingScreen';
 import InboxItems from './components/Inbox/InboxItems';
@@ -189,6 +192,9 @@ const App: React.FC = () => {
                             />
                             <Route path="/today" element={<TasksToday />} />
                             <Route path="/ceo" element={<CeoView />} />
+                            <Route path="/team" element={<TeamView />} />
+                            <Route path="/reports" element={<ReportsView />} />
+                            <Route path="/portfolio" element={<PortfolioView />} />
                             <Route
                                 path="/task/:uid"
                                 element={<TaskDetails />}

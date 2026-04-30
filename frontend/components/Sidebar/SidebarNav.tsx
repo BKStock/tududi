@@ -8,6 +8,9 @@ import {
     ClockIcon,
     CalendarIcon,
     PresentationChartLineIcon,
+    UserGroupIcon,
+    ChartBarIcon,
+    Squares2X2Icon,
 } from '@heroicons/react/24/solid';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { useStore } from '../../store/useStore';
@@ -53,6 +56,21 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
             path: '/ceo',
             title: t('sidebar.ceoView', '経営ダッシュボード'),
             icon: <PresentationChartLineIcon className="h-5 w-5" />,
+        },
+        {
+            path: '/portfolio',
+            title: t('sidebar.portfolio', 'ポートフォリオ'),
+            icon: <Squares2X2Icon className="h-5 w-5" />,
+        },
+        {
+            path: '/team',
+            title: t('sidebar.team', 'チーム'),
+            icon: <UserGroupIcon className="h-5 w-5" />,
+        },
+        {
+            path: '/reports',
+            title: t('sidebar.reports', 'レポート'),
+            icon: <ChartBarIcon className="h-5 w-5" />,
         },
         {
             path: '/inbox',
