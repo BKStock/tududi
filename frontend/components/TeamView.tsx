@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { fetchTasks } from '../utils/tasksService';
 import { Task } from '../entities/Task';
+import { getApiPath } from '../config/paths';
 
 type Status = 'active' | 'idle' | 'error';
 
@@ -49,20 +50,39 @@ const avatarUrl = (name: string) =>
 const TeamView: React.FC = () => {
     const navigate = useNavigate();
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [tgPolling, setTgPolling] = useState<{ running: boolean; usersCount: number } | null>(null);
 
     useEffect(() => {
         fetchTasks('?status=all').then((r) => setTasks((r?.tasks || []) as Task[])).catch(() => {});
+
+        // Real Telegram bot status
+        fetch(getApiPath('telegram/polling-status'), { credentials: 'include' })
+            .then((r) => r.ok ? r.json() : null)
+            .then((d) => {
+                if (d?.status) setTgPolling({ running: d.status.running, usersCount: d.status.usersCount });
+            })
+            .catch(() => {});
     }, []);
 
+    // Override BKDesignbot row with real telegram polling status
+    const liveRoster = useMemo(() => {
+        if (!tgPolling) return ROSTER;
+        return ROSTER.map((s) =>
+            s.name === 'BKDesignbot'
+                ? { ...s, status: (tgPolling.running ? 'active' : 'error') as Status, lastActive: tgPolling.running ? '稼働中 (live)' : '停止' }
+                : s
+        );
+    }, [tgPolling]);
+
     const stats = useMemo(() => {
-        const total = ROSTER.length;
-        const active = ROSTER.filter((s) => s.status === 'active').length;
-        const idle = ROSTER.filter((s) => s.status === 'idle').length;
-        const error = ROSTER.filter((s) => s.status === 'error').length;
-        const ai = ROSTER.filter((s) => s.type === 'ai').length;
-        const avgLoad = Math.round(ROSTER.reduce((a, b) => a + b.workload, 0) / total);
+        const total = liveRoster.length;
+        const active = liveRoster.filter((s) => s.status === 'active').length;
+        const idle = liveRoster.filter((s) => s.status === 'idle').length;
+        const error = liveRoster.filter((s) => s.status === 'error').length;
+        const ai = liveRoster.filter((s) => s.type === 'ai').length;
+        const avgLoad = Math.round(liveRoster.reduce((a, b) => a + b.workload, 0) / total);
         return { total, active, idle, error, ai, avgLoad };
-    }, []);
+    }, [liveRoster]);
 
     return (
         <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-12">
@@ -100,7 +120,7 @@ const TeamView: React.FC = () => {
 
                 {/* Roster grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {ROSTER.map((s) => {
+                    {liveRoster.map((s) => {
                         const sc = statusColor(s.status);
                         return (
                             <div key={s.name} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-5 hover:shadow-md transition">

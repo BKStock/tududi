@@ -379,20 +379,32 @@ const CeoView: React.FC = () => {
                             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-5">
                                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">最近のアクティビティ</h3>
                                 <div className="space-y-3">
-                                    {recentActivity.map((t: any) => (
-                                        <div key={t.id} className="flex items-start gap-3">
-                                            <img src={avatarUrl('BK')} className="w-8 h-8 rounded-full ring-1 ring-gray-200 dark:ring-gray-700" alt="" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs text-gray-700 dark:text-gray-300">
-                                                    <span className="font-medium">BK</span>
-                                                    <span className="text-gray-500"> が </span>
-                                                    <span className="text-gray-900 dark:text-white truncate inline-block max-w-[140px] align-bottom">"{t.name}"</span>
-                                                    <span className="text-gray-500"> を更新</span>
+                                    {recentActivity.map((t: any) => {
+                                        const isDone = t.status === 2;
+                                        const isInProg = t.status === 1;
+                                        const verb = isDone ? '完了' : isInProg ? '進行中に変更' : '更新';
+                                        const verbColor = isDone ? 'text-emerald-600 dark:text-emerald-400'
+                                            : isInProg ? 'text-blue-600 dark:text-blue-400'
+                                            : 'text-gray-500 dark:text-gray-400';
+                                        return (
+                                            <div key={t.id} className="flex items-start gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isDone ? 'bg-emerald-100 dark:bg-emerald-900/40' : isInProg ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                                                    <span className={`text-sm ${verbColor}`}>{isDone ? '✓' : isInProg ? '→' : '·'}</span>
                                                 </div>
-                                                <div className="text-[10px] text-gray-400 mt-0.5">{formatDate(t.updated_at || t.created_at)}</div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                        <span className="text-gray-900 dark:text-white font-medium truncate inline-block max-w-[150px] align-bottom">{t.name}</span>
+                                                        <span className={`ml-1 ${verbColor}`}>を {verb}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[100px]">{projectName(t.project_id)}</span>
+                                                        <span className="text-[10px] text-gray-300 dark:text-gray-600">·</span>
+                                                        <span className="text-[10px] text-gray-400 tabular-nums">{formatDate(t.updated_at || t.created_at)}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

@@ -57,6 +57,7 @@ const ReportsView: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [areas, setAreas] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [range, setRange] = useState<7 | 14 | 30 | 90>(14);
 
     useEffect(() => {
         Promise.all([
@@ -127,10 +128,10 @@ const ReportsView: React.FC = () => {
         }).filter((p) => p.total > 0).sort((a, b) => b.total - a.total).slice(0, 8);
     }, [projects, tasks]);
 
-    // Last 14 days completion sparkline
+    // Last N days completion sparkline (range-controlled)
     const completionTrend = useMemo(() => {
         const days: { day: string; count: number }[] = [];
-        for (let i = 13; i >= 0; i--) {
+        for (let i = range - 1; i >= 0; i--) {
             const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
             const next = new Date(d); next.setDate(next.getDate() + 1);
             const c = tasks.filter((t: any) => {
@@ -141,7 +142,7 @@ const ReportsView: React.FC = () => {
             days.push({ day: d.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }), count: c });
         }
         return days;
-    }, [tasks]);
+    }, [tasks, range]);
 
     const maxBucket = Math.max(byPriority.high, byPriority.medium, byPriority.low) || 1;
     const maxCompletion = Math.max(...completionTrend.map((d) => d.count)) || 1;
@@ -152,9 +153,22 @@ const ReportsView: React.FC = () => {
     return (
         <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">レポート / 分析</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{areas.length} エリア × {projects.length} プロジェクト × {tasks.length} タスクの全体傾向</p>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">レポート / 分析</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{areas.length} エリア × {projects.length} プロジェクト × {tasks.length} タスクの全体傾向</p>
+                    </div>
+                    <div className="flex gap-1.5 bg-white dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-1">
+                        {([7, 14, 30, 90] as const).map((r) => (
+                            <button
+                                key={r}
+                                onClick={() => setRange(r)}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${range === r ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                            >
+                                {r}日
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* KPI Row */}
@@ -170,7 +184,7 @@ const ReportsView: React.FC = () => {
                     <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h3 className="text-base font-semibold text-gray-900 dark:text-white">14 日間の完了タスク推移</h3>
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-white">{range} 日間の完了タスク推移</h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">日次の完了数</p>
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">合計 {completionTrend.reduce((a, b) => a + b.count, 0)} 件</div>
