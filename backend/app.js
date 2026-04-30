@@ -251,6 +251,7 @@ const usersModule = require('./modules/users');
 const viewsModule = require('./modules/views');
 const mcpModule = require('./modules/mcp');
 const oidcModule = require('./modules/oidc');
+const casinoBiModule = require('./modules/casino-bi');
 
 // Swagger documentation - enabled by default, protected by authentication
 // Mounted on /api-docs to avoid conflicts with API routes
@@ -334,6 +335,7 @@ const registerApiRoutes = (basePath) => {
     app.use(basePath, viewsModule.routes);
     app.use(basePath, notificationsModule.routes);
     app.use(basePath, mcpModule.routes);
+    app.use(basePath, casinoBiModule.routes);
 };
 
 // Register routes at both /api and /api/v1 (if versioned) to maintain backwards compatibility
@@ -381,6 +383,9 @@ async function startServer() {
         // Initialize CalDAV sync scheduler
         const caldavSyncScheduler = require('./modules/caldav/services/sync-scheduler');
         await caldavSyncScheduler.initialize();
+
+        // Initialize Casino BI KPI scheduler (Federation pattern, 15min sync)
+        await casinoBiModule.scheduler.initialize();
 
         // Validate authentication configuration
         const { validateAuthConfiguration } = require('./config/authConfig');

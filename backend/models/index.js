@@ -78,6 +78,7 @@ const CalDAVOccurrenceOverride = require('./caldav_occurrence_override')(
 );
 const CalDAVRemoteCalendar = require('./caldav_remote_calendar')(sequelize);
 const CalendarToken = require('./calendar_token')(sequelize);
+const CasinoKpiSnapshot = require('./casino_kpi_snapshot')(sequelize);
 
 User.hasMany(Area, { foreignKey: 'user_id' });
 Area.belongsTo(User, { foreignKey: 'user_id' });
@@ -289,4 +290,5 @@ module.exports = {
     CalDAVOccurrenceOverride,
     CalDAVRemoteCalendar,
     CalendarToken,
+    CasinoKpiSnapshot,
 };
