@@ -22,6 +22,7 @@ import BackupRestore from './components/Backup/BackupRestore';
 import Layout from './Layout';
 import { User } from './entities/User';
 import TasksToday from './components/Task/TasksToday';
+import CeoView from './components/CeoView';
 import TaskDetails from './components/Task/TaskDetails';
 import LoadingScreen from './components/Shared/LoadingScreen';
 import InboxItems from './components/Inbox/InboxItems';
@@ -187,6 +188,7 @@ const App: React.FC = () => {
                                 element={<Navigate to="/today" replace />}
                             />
                             <Route path="/today" element={<TasksToday />} />
+                            <Route path="/ceo" element={<CeoView />} />
                             <Route
                                 path="/task/:uid"
                                 element={<TaskDetails />}

@@ -7,6 +7,7 @@ import {
     ListBulletIcon,
     ClockIcon,
     CalendarIcon,
+    PresentationChartLineIcon,
 } from '@heroicons/react/24/solid';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { useStore } from '../../store/useStore';
@@ -48,6 +49,11 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
     }, []);
 
     const allNavLinks = [
+        {
+            path: '/ceo',
+            title: t('sidebar.ceoView', '経営ダッシュボード'),
+            icon: <PresentationChartLineIcon className="h-5 w-5" />,
+        },
         {
             path: '/inbox',
             title: t('sidebar.inbox', 'Inbox'),

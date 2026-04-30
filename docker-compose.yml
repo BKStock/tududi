@@ -1,6 +1,9 @@
 services:
   tududi:
-    image: chrisvel/tududi:latest
+    image: bk-dashboard:custom
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: bk-dashboard
     environment:
       - TUDUDI_USER_EMAIL=${TUDUDI_USER_EMAIL}
