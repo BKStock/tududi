@@ -14,6 +14,7 @@ import { fetchProjects } from '../utils/projectsService';
 import { fetchAreas } from '../utils/areasService';
 import { Task } from '../entities/Task';
 import { Project } from '../entities/Project';
+import DashboardSkeleton from './Shared/Skeleton';
 
 const AREA_COLORS: Record<string, { bg: string; ring: string; dot: string; text: string }> = {
     'iGaming': { bg: 'bg-rose-50 dark:bg-rose-950/40', ring: 'ring-rose-200 dark:ring-rose-900', dot: 'bg-rose-400', text: 'text-rose-700 dark:text-rose-300' },
@@ -104,7 +105,7 @@ const PortfolioView: React.FC = () => {
         return { total, active, attention, idle, totalTasks, totalDone };
     }, [enriched]);
 
-    if (loading) return <div className="p-8 text-gray-500 text-center">読み込み中...</div>;
+    if (loading) return <DashboardSkeleton />;
 
     return (
         <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-12">

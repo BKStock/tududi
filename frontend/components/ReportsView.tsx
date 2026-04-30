@@ -15,6 +15,7 @@ import { fetchProjects } from '../utils/projectsService';
 import { fetchAreas } from '../utils/areasService';
 import { Task } from '../entities/Task';
 import { Project } from '../entities/Project';
+import DashboardSkeleton from './Shared/Skeleton';
 
 const formatPct = (n: number) => `${Math.round(n * 100)}%`;
 
@@ -148,7 +149,7 @@ const ReportsView: React.FC = () => {
     const maxCompletion = Math.max(...completionTrend.map((d) => d.count)) || 1;
     const maxAreaTotal = Math.max(...byArea.map((a) => a.total)) || 1;
 
-    if (loading) return <div className="p-8 text-gray-500 text-center">読み込み中...</div>;
+    if (loading) return <DashboardSkeleton />;
 
     return (
         <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-12">

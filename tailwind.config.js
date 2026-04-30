@@ -17,10 +17,15 @@ module.exports = {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        skeleton: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
       },
       animation: {
         'scale-in': 'scale-in 0.3s ease-out',
         'fade-in': 'fade-in 0.3s ease-out',
+        skeleton: 'skeleton 1.5s ease-in-out infinite',
       },
     },
   },

@@ -51,56 +51,37 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
         fetchFlags();
     }, []);
 
-    const allNavLinks = [
+    type NavLink = { path: string; title: string; icon: JSX.Element; query?: string; featureFlag?: string };
+    type NavSection = { label: string; links: NavLink[] };
+
+    const navSections: NavSection[] = [
         {
-            path: '/ceo',
-            title: t('sidebar.ceoView', '経営ダッシュボード'),
-            icon: <PresentationChartLineIcon className="h-5 w-5" />,
+            label: 'OVERVIEW',
+            links: [
+                { path: '/ceo', title: t('sidebar.ceoView', '経営ダッシュボード'), icon: <PresentationChartLineIcon className="h-5 w-5" /> },
+                { path: '/portfolio', title: t('sidebar.portfolio', 'ポートフォリオ'), icon: <Squares2X2Icon className="h-5 w-5" /> },
+                { path: '/team', title: t('sidebar.team', 'チーム'), icon: <UserGroupIcon className="h-5 w-5" /> },
+                { path: '/reports', title: t('sidebar.reports', 'レポート'), icon: <ChartBarIcon className="h-5 w-5" /> },
+            ],
         },
         {
-            path: '/portfolio',
-            title: t('sidebar.portfolio', 'ポートフォリオ'),
-            icon: <Squares2X2Icon className="h-5 w-5" />,
+            label: 'PLAN',
+            links: [
+                { path: '/today', title: t('sidebar.today', 'Today'), icon: <CalendarDaysIcon className="h-5 w-5" />, query: 'type=today' },
+                { path: '/upcoming?status=active', title: t('sidebar.upcoming', 'Upcoming'), icon: <ClockIcon className="h-5 w-5" /> },
+                { path: '/calendar', title: t('sidebar.calendar', 'Calendar'), icon: <CalendarIcon className="h-5 w-5" />, featureFlag: 'calendar' },
+            ],
         },
         {
-            path: '/team',
-            title: t('sidebar.team', 'チーム'),
-            icon: <UserGroupIcon className="h-5 w-5" />,
-        },
-        {
-            path: '/reports',
-            title: t('sidebar.reports', 'レポート'),
-            icon: <ChartBarIcon className="h-5 w-5" />,
-        },
-        {
-            path: '/inbox',
-            title: t('sidebar.inbox', 'Inbox'),
-            icon: <InboxIcon className="h-5 w-5" />,
-        },
-        {
-            path: '/today',
-            title: t('sidebar.today', 'Today'),
-            icon: <CalendarDaysIcon className="h-5 w-5" />,
-            query: 'type=today',
-        },
-        {
-            path: '/upcoming?status=active',
-            title: t('sidebar.upcoming', 'Upcoming'),
-            icon: <ClockIcon className="h-5 w-5" />,
-        },
-        {
-            path: '/calendar',
-            title: t('sidebar.calendar', 'Calendar'),
-            icon: <CalendarIcon className="h-5 w-5" />,
-            featureFlag: 'calendar',
-        },
-        {
-            path: '/tasks?status=active',
-            title: t('sidebar.allTasks', 'All Tasks'),
-            icon: <ListBulletIcon className="h-5 w-5" />,
-            query: 'status=active',
+            label: 'CAPTURE',
+            links: [
+                { path: '/inbox', title: t('sidebar.inbox', 'Inbox'), icon: <InboxIcon className="h-5 w-5" /> },
+                { path: '/tasks?status=active', title: t('sidebar.allTasks', 'All Tasks'), icon: <ListBulletIcon className="h-5 w-5" />, query: 'status=active' },
+            ],
         },
     ];
+
+    const allNavLinks = navSections.flatMap((s) => s.links);
 
     const navLinks = allNavLinks.filter((link) => {
         if (link.featureFlag) {
@@ -133,21 +114,25 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
             : 'text-gray-700 dark:text-gray-300';
     };
 
+    const visibleLinks = new Set(navLinks.map((l) => l.path));
+
     return (
         <ul className="flex flex-col space-y-1">
-            {navLinks.map((link) => (
-                <React.Fragment key={link.path}>
-                    <li>
-                        <button
-                            onClick={() =>
-                                handleNavClick(link.path, link.title, link.icon)
-                            }
-                            data-testid={`sidebar-nav-${link.path.replace(/^\//, '').replace(/\?.*$/, '')}`}
-                            className={`w-full text-left px-4 py-1 flex items-center justify-between rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 ${isActive(
-                                link.path,
-                                link.query
-                            )}`}
-                        >
+            {navSections.map((section) => {
+                const sectionLinks = section.links.filter((l) => visibleLinks.has(l.path));
+                if (sectionLinks.length === 0) return null;
+                return (
+                    <React.Fragment key={section.label}>
+                        <li className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 select-none">
+                            {section.label}
+                        </li>
+                        {sectionLinks.map((link) => (
+                            <li key={link.path}>
+                                <button
+                                    onClick={() => handleNavClick(link.path, link.title, link.icon)}
+                                    data-testid={`sidebar-nav-${link.path.replace(/^\//, '').replace(/\?.*$/, '')}`}
+                                    className={`w-full text-left px-4 py-1 flex items-center justify-between rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isActive(link.path, link.query)}`}
+                                >
                             <div className="flex items-center">
                                 {link.icon}
                                 <span className="ml-2">{link.title}</span>
@@ -193,10 +178,12 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
                                     </div>
                                 )}
                             </div>
-                        </button>
-                    </li>
-                </React.Fragment>
-            ))}
+                                </button>
+                            </li>
+                        ))}
+                    </React.Fragment>
+                );
+            })}
         </ul>
     );
 };

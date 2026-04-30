@@ -20,6 +20,7 @@ import { fetchTasks } from '../utils/tasksService';
 import { fetchProjects } from '../utils/projectsService';
 import { Task } from '../entities/Task';
 import { Project } from '../entities/Project';
+import DashboardSkeleton from './Shared/Skeleton';
 
 type Status = 0 | 1 | 2 | 3;
 type Priority = 0 | 1 | 2;
@@ -199,6 +200,18 @@ const CeoView: React.FC = () => {
         load();
     }, []);
 
+    // Phase 0 fix: TZ-safe today midnight, no toDateString() ambiguity
+    const today0 = useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, []);
+    const tomorrow0 = useMemo(() => {
+        const d = new Date(today0);
+        d.setDate(d.getDate() + 1);
+        return d;
+    }, [today0]);
+
     const stats = useMemo(() => {
         const total = tasks.length;
         const done = tasks.filter((t) => (t as any).status === 2).length;
@@ -208,18 +221,28 @@ const CeoView: React.FC = () => {
         const overdue = tasks.filter((t: any) => {
             if (t.status === 2) return false;
             if (!t.due_date) return false;
-            return new Date(t.due_date) < new Date(new Date().toDateString());
+            return new Date(t.due_date) < today0;
         }).length;
         return { total, done, inProg, todo, review, overdue };
-    }, [tasks]);
+    }, [tasks, today0]);
 
+    // Phase 0 fix: "今日 + 期限超過" の "燃えてる" タスクを返す (元の bug は startsWith(YYYY-MM) で 1 ヶ月返してた)
     const todaysTasks = useMemo(() => {
-        const todayStr = new Date().toISOString().split('T')[0];
         return tasks
-            .filter((t: any) => t.status !== 2 && t.due_date && t.due_date.startsWith(todayStr.substring(0, 7)))
-            .sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0))
+            .filter((t: any) => {
+                if (t.status === 2) return false;
+                if (!t.due_date) return false;
+                const due = new Date(t.due_date);
+                return due < tomorrow0; // 今日まで or 過去 (overdue)
+            })
+            .sort((a: any, b: any) => {
+                // priority 降順 → due_date 昇順 (高優先度 + 期限近い順)
+                const pri = (b.priority || 0) - (a.priority || 0);
+                if (pri !== 0) return pri;
+                return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+            })
             .slice(0, 8);
-    }, [tasks]);
+    }, [tasks, tomorrow0]);
 
     const upcomingDeadlines = useMemo(() => {
         return tasks
@@ -255,9 +278,7 @@ const CeoView: React.FC = () => {
 
     const projectName = (id: number) => projects.find((p: any) => p.id === id)?.name || '—';
 
-    if (loading) {
-        return <div className="p-8 text-center text-gray-500">読み込み中...</div>;
-    }
+    if (loading) return <DashboardSkeleton />;
 
     return (
         <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-12">
