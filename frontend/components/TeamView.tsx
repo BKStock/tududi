@@ -89,8 +89,8 @@ const TeamView: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">チーム / AI スタッフ</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">人間 + AI agents 合計 {stats.total} 名 — 稼働状況とロードバランス</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Crew</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">乗組員 — 人間 + AI agents 合計 {stats.total} 名の戦闘配置</p>
                     </div>
                 </div>
 

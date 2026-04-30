@@ -303,6 +303,28 @@ const CeoView: React.FC = () => {
             .slice(0, 4);
     }, [tasks]);
 
+    // Top decision today: highest-priority pending decision (single hero item)
+    const topDecision = useMemo(() => pendingDecisions[0] || null, [pendingDecisions]);
+
+    // Kill List (per design-critic): プロジェクト撤退候補
+    // Heuristic: 30+ 日アクティビティなし AND 進捗 < 30% AND タスク 1 件以上
+    const killList = useMemo(() => {
+        const cutoff = new Date(today0);
+        cutoff.setDate(cutoff.getDate() - 30);
+        return projects.map((p: any) => {
+            const ts = tasks.filter((t: any) => t.project_id === p.id);
+            if (ts.length === 0) return null;
+            const lastUpdate = Math.max(...ts.map((t: any) => new Date(t.updated_at || t.created_at || 0).getTime()));
+            const done = ts.filter((t: any) => t.status === 2).length;
+            const pct = (done / ts.length) * 100;
+            const stale = lastUpdate < cutoff.getTime();
+            const lowProgress = pct < 30;
+            if (!stale || !lowProgress) return null;
+            const daysSince = Math.round((Date.now() - lastUpdate) / 86400000);
+            return { id: p.id, name: p.name, area: (p.Area?.name || p.area?.name || '—'), daysSince, pct: Math.round(pct), tasks: ts.length };
+        }).filter(Boolean).slice(0, 5) as Array<{ id: number; name: string; area: string; daysSince: number; pct: number; tasks: number }>;
+    }, [projects, tasks, today0]);
+
     const projectName = (id: number) => projects.find((p: any) => p.id === id)?.name || '—';
 
     if (loading) return <DashboardSkeleton />;
@@ -312,8 +334,8 @@ const CeoView: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">経営ダッシュボード</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">CEO View — 18+ プロジェクトの状況を 3 秒で把握</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Command</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">司令室 — 18+ プロジェクトを 3 秒で把握</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="relative">
@@ -333,6 +355,31 @@ const CeoView: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Today's Decision Hero (per design-critic: 上中央 / serif / Y/N) */}
+                {topDecision && (
+                    <div className="mb-6 bg-gradient-to-r from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900 rounded-2xl shadow-xl ring-1 ring-gray-700 px-8 py-7 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500 opacity-10 blur-3xl rounded-full" />
+                        <div className="relative">
+                            <div className="text-[10px] font-mono tracking-[0.3em] uppercase text-orange-400 mb-2">★ TODAY'S DECISION</div>
+                            <h2 className="text-2xl md:text-3xl font-bold text-white mb-1 leading-tight" style={{ fontFamily: 'Georgia, "Times New Roman", serif', letterSpacing: '-0.02em' }}>
+                                {topDecision.name}
+                            </h2>
+                            <p className="text-sm text-gray-400 mb-5">{projectName(topDecision.project_id)} · 期限: {formatDate(topDecision.due_date)}</p>
+                            <div className="flex gap-2">
+                                <button onClick={() => navigate(`/task/${topDecision.uid}`)} className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-sm rounded-lg transition focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900">
+                                    ✓ 承認
+                                </button>
+                                <button onClick={() => navigate(`/task/${topDecision.uid}`)} className="px-5 py-2 bg-rose-500 hover:bg-rose-400 text-white font-semibold text-sm rounded-lg transition">
+                                    ✗ 却下
+                                </button>
+                                <button onClick={() => sendToTelegram(topDecision.name, projectName(topDecision.project_id))} className="px-5 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-lg transition backdrop-blur">
+                                    保留 / 質問
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* KPI Row */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <Kpi label="Total Tasks" value={stats.total} delta="↑ 全プロジェクト" bgClass="bg-blue-100 dark:bg-blue-900/40" icon={<ClipboardDocumentListIcon className="w-6 h-6 text-blue-600 dark:text-blue-300" />} />
@@ -344,6 +391,43 @@ const CeoView: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left 2 cols */}
                     <div className="lg:col-span-2 space-y-6">
+                        {/* Kill List — 撤退候補 (per design-critic 必殺機能) */}
+                        {killList.length > 0 && (
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
+                                <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-rose-500">☠</span>
+                                        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Kill List</h2>
+                                        <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400">30日+停滞 / 進捗 &lt; 30%</span>
+                                    </div>
+                                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">{killList.length} 候補</span>
+                                </div>
+                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {killList.map((k) => (
+                                        <div key={k.id} className="px-5 py-3 flex items-center gap-3 hover:bg-rose-50/30 dark:hover:bg-rose-950/20 transition">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <span className="font-medium text-gray-900 dark:text-white line-through decoration-rose-400 decoration-2 truncate">{k.name}</span>
+                                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{k.area}</span>
+                                                </div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {k.daysSince}日前更新 · 進捗 {k.pct}% · {k.tasks} タスク
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-1.5">
+                                                <button className="text-[11px] px-2.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-medium transition">
+                                                    Kill
+                                                </button>
+                                                <button onClick={() => navigate(`/projects`)} className="text-[11px] px-2.5 py-1.5 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 ring-1 ring-gray-200 dark:ring-gray-600 font-medium transition">
+                                                    継続
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Pending Decisions — P1 burning items needing BK decision */}
                         {pendingDecisions.length > 0 && (
                             <div className="bg-gradient-to-br from-rose-50 to-amber-50 dark:from-rose-950/30 dark:to-amber-950/30 rounded-2xl shadow-sm ring-1 ring-rose-200 dark:ring-rose-900 overflow-hidden">

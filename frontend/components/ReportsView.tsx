@@ -156,8 +156,8 @@ const ReportsView: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">レポート / 分析</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{areas.length} エリア × {projects.length} プロジェクト × {tasks.length} タスクの全体傾向</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sonar</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">深海探査 — {areas.length} エリア × {projects.length} プロジェクト × {tasks.length} タスクの傾向と異常</p>
                     </div>
                     <div className="flex gap-1.5 bg-white dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-1">
                         {([7, 14, 30, 90] as const).map((r) => (

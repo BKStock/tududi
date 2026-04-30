@@ -112,8 +112,8 @@ const PortfolioView: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ポートフォリオ</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{portfolioStats.total} プロジェクト × {areas.length} エリアの全体状況</p>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Fleet</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">艦隊 — {portfolioStats.total} プロジェクト × {areas.length} エリアの航海状況</p>
                     </div>
                     <div className="flex gap-2">
                         {[

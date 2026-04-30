@@ -56,18 +56,19 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
 
     const navSections: NavSection[] = [
         {
-            label: 'OVERVIEW',
+            // BRIDGE = 艦隊司令塔。Design team consensus 採用 (Fleet メタファー).
+            label: 'BRIDGE',
             links: [
-                { path: '/ceo', title: t('sidebar.ceoView', '経営ダッシュボード'), icon: <PresentationChartLineIcon className="h-5 w-5" /> },
-                { path: '/portfolio', title: t('sidebar.portfolio', 'ポートフォリオ'), icon: <Squares2X2Icon className="h-5 w-5" /> },
-                { path: '/team', title: t('sidebar.team', 'チーム'), icon: <UserGroupIcon className="h-5 w-5" /> },
-                { path: '/reports', title: t('sidebar.reports', 'レポート'), icon: <ChartBarIcon className="h-5 w-5" /> },
+                { path: '/today', title: t('sidebar.today', 'Today'), icon: <CalendarDaysIcon className="h-5 w-5" />, query: 'type=today' },
+                { path: '/ceo', title: t('sidebar.command', 'Command'), icon: <PresentationChartLineIcon className="h-5 w-5" /> },
+                { path: '/portfolio', title: t('sidebar.fleet', 'Fleet'), icon: <Squares2X2Icon className="h-5 w-5" /> },
+                { path: '/team', title: t('sidebar.crew', 'Crew'), icon: <UserGroupIcon className="h-5 w-5" /> },
+                { path: '/reports', title: t('sidebar.sonar', 'Sonar'), icon: <ChartBarIcon className="h-5 w-5" /> },
             ],
         },
         {
             label: 'PLAN',
             links: [
-                { path: '/today', title: t('sidebar.today', 'Today'), icon: <CalendarDaysIcon className="h-5 w-5" />, query: 'type=today' },
                 { path: '/upcoming?status=active', title: t('sidebar.upcoming', 'Upcoming'), icon: <ClockIcon className="h-5 w-5" /> },
                 { path: '/calendar', title: t('sidebar.calendar', 'Calendar'), icon: <CalendarIcon className="h-5 w-5" />, featureFlag: 'calendar' },
             ],
