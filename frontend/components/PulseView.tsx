@@ -338,7 +338,7 @@ const PulseView: React.FC = () => {
                 <div className="mt-8 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 ring-1 ring-blue-200 dark:ring-blue-900 rounded-xl flex items-start gap-3">
                     <BoltIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 text-xs text-blue-900 dark:text-blue-200">
-                        <strong>Phase 2 (live)</strong> — Metabase API → tudidi cache (15min sync). Source of Record: <code className="px-1 bg-white/40 dark:bg-blue-950 rounded">metabase.slotenpromotion.com</code>.
+                        <strong>Phase 2 (live)</strong> — Metabase API → tudidi cache (5min sync). Source of Record: <code className="px-1 bg-white/40 dark:bg-blue-950 rounded">metabase.slotenpromotion.com</code>.
                         {schedulerHealth && <> Scheduler: {schedulerHealth.enabled ? '✓ enabled' : '✗ disabled'}.</>}
                         <strong className="ml-2">Phase 3</strong> で MCP tools (`get_casino_kpi`) 経由 Claude Code 横断クエリ予定。
                     </div>

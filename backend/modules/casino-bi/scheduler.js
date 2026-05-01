@@ -10,7 +10,7 @@ const isEnabled = () => {
     return flag === undefined ? true : flag === 'true' || flag === '1';
 };
 
-const getCronExpr = () => process.env.CASINO_KPI_SYNC_CRON || '*/15 * * * *';
+const getCronExpr = () => process.env.CASINO_KPI_SYNC_CRON || '*/5 * * * *';
 
 const runOnce = async () => {
     if (state.running) return state.lastResult;
