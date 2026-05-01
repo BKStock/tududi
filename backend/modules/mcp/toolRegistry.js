@@ -4,6 +4,7 @@ const { registerTaskTools } = require('./tools/taskTools');
 const { registerProjectTools } = require('./tools/projectTools');
 const { registerInboxTools } = require('./tools/inboxTools');
 const { registerMiscTools } = require('./tools/miscTools');
+const { registerCasinoBiTools } = require('./tools/casinoBiTools');
 
 /**
  * Register all MCP tools with the server
@@ -16,6 +17,7 @@ function registerAllTools(server, context, tools) {
     registerProjectTools(server, context, tools);
     registerInboxTools(server, context, tools);
     registerMiscTools(server, context, tools);
+    registerCasinoBiTools(server, context, tools);
 }
 
 module.exports = { registerAllTools };

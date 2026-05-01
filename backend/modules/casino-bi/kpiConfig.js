@@ -52,15 +52,19 @@ const singleScalar = (data) => {
     return { value: v, previous: null, spark: [v] };
 };
 
-// KPI declarations. card_id pulled from existing user-saved cards on
-// metabase.slotenpromotion.com. Adjust here as Metabase content evolves.
+// Card 140 = [KPI] Monthly Trend - All Metrics (Konibet master card)
+//   month / unique_depositors / active_players / deposit_jpy / ggr_jpy /
+//   withdrawal_jpy / avg_deposit / ggr_ltv_jpy / ggr_per_depositor
+// All Konibet monthly KPIs share this single card to minimize Metabase load.
+const KONIBET_MASTER_CARD = 140;
+
 const KPIS = [
     {
         key: 'konibet_ggr_jpy',
         brand: 'Konibet',
         metric: 'GGR',
         unit: 'JPY',
-        cardId: 142, // [KPI] GGR Trend (JPY) — month / ggr_jpy / deposit_jpy / withdrawal_jpy
+        cardId: KONIBET_MASTER_CARD,
         parse: monthlyByColumn('ggr_jpy'),
     },
     {
@@ -68,7 +72,7 @@ const KPIS = [
         brand: 'Konibet',
         metric: '入金',
         unit: 'JPY',
-        cardId: 142,
+        cardId: KONIBET_MASTER_CARD,
         parse: monthlyByColumn('deposit_jpy'),
     },
     {
@@ -76,7 +80,7 @@ const KPIS = [
         brand: 'Konibet',
         metric: '出金',
         unit: 'JPY',
-        cardId: 142,
+        cardId: KONIBET_MASTER_CARD,
         parse: monthlyByColumn('withdrawal_jpy'),
     },
     {
@@ -84,24 +88,49 @@ const KPIS = [
         brand: 'Konibet',
         metric: 'Active',
         unit: 'count',
-        cardId: 137, // [KPI] Unique Depositors (Latest Month)
-        parse: singleScalar,
+        cardId: KONIBET_MASTER_CARD,
+        parse: monthlyByColumn('unique_depositors'),
     },
     {
-        key: 'konibet_total_registrations',
+        key: 'konibet_active_players',
         brand: 'Konibet',
-        metric: '登録',
+        metric: 'Players',
         unit: 'count',
-        cardId: 143, // [KPI] Total Registrations
+        cardId: KONIBET_MASTER_CARD,
+        parse: monthlyByColumn('active_players'),
+    },
+    {
+        key: 'konibet_avg_deposit',
+        brand: 'Konibet',
+        metric: 'AVG入金',
+        unit: 'JPY',
+        cardId: KONIBET_MASTER_CARD,
+        parse: monthlyByColumn('avg_deposit'),
+    },
+    {
+        key: 'sloten_ggr_total_jpy',
+        brand: 'Sloten',
+        metric: 'GGR累計',
+        unit: 'JPY',
+        cardId: 145, // [Sloten] Total GGR (JPY) — single scalar (cumulative)
         parse: singleScalar,
     },
     {
-        key: 'sloten_ggr_jpy',
-        brand: 'Sloten',
-        metric: 'GGR',
+        key: 'dsc_ggr_total_jpy',
+        brand: 'DSC',
+        metric: 'GGR累計',
         unit: 'JPY',
-        cardId: 145, // [Sloten] Total GGR (JPY)
-        parse: singleScalar,
+        cardId: 40, // DSC Summary (JPY) — single row, total_ggr is column 5
+        parse: (data) => {
+            const cols = data?.data?.cols || [];
+            const rows = data?.data?.rows || [];
+            if (rows.length === 0) return null;
+            const idx = findCol(cols, 'total_ggr');
+            if (idx < 0) return null;
+            const v = numericOrNull(rows[0][idx]);
+            if (v == null) return null;
+            return { value: v, previous: null, spark: [v] };
+        },
     },
 ];
 

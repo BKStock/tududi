@@ -108,6 +108,18 @@ async function listMcpTools(req, res) {
             count: 3,
             tools: ['list_areas', 'list_tags', 'search'],
         },
+        {
+            category: 'Casino BI',
+            count: 6,
+            tools: [
+                'list_casino_kpis',
+                'get_casino_kpi',
+                'get_casino_kpi_history',
+                'query_metabase_card',
+                'query_metabase_native',
+                'trigger_casino_kpi_sync',
+            ],
+        },
     ];
 
     res.json({ tools });

@@ -165,8 +165,17 @@ const PulseView: React.FC = () => {
         return tiles.filter((k) => k.previous && Math.abs(deltaPct(k.value, k.previous)) >= ANOMALY_THRESHOLD);
     }, [tiles]);
 
-    const heroTiles = tiles.filter((t) => t.brand === 'Konibet').slice(0, 4);
-    const secondaryTiles = tiles.filter((t) => t.brand !== 'Konibet');
+    // Primary lane: 4 most decision-critical Konibet metrics in fixed order.
+    const HERO_ORDER = ['GGR', '入金', 'Active', 'Players'];
+    const konibetTiles = tiles.filter((t) => t.brand === 'Konibet');
+    const heroTiles = HERO_ORDER
+        .map((m) => konibetTiles.find((t) => t.metric === m))
+        .filter(Boolean) as KpiTile[];
+    const heroKeys = new Set(heroTiles.map((t) => t.key));
+    const secondaryTiles = [
+        ...konibetTiles.filter((t) => !heroKeys.has(t.key)),
+        ...tiles.filter((t) => t.brand !== 'Konibet'),
+    ];
 
     const handleQuickAction = (kpi: KpiTile, action: 'analyze' | 'investigate') => {
         const labels = {
