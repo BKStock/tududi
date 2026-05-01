@@ -28,16 +28,32 @@ const findCol = (cols, ...names) => {
     return -1;
 };
 
+// When the calendar month has not had enough elapsed days to produce a stable
+// number (first 5 days), drop the partial current-month row so the displayed
+// "latest" is the most recent fully-elapsed month. This avoids showing
+// "Sloten 入金 -99%" anomaly on May 1st when only one day of May is live.
+const PARTIAL_MONTH_CUTOFF_DAY = 5;
+
+const isPartialCurrentMonth = (monthStr) => {
+    const now = new Date();
+    if (now.getUTCDate() > PARTIAL_MONTH_CUTOFF_DAY) return false;
+    const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    return monthStr === ym;
+};
+
 const monthlyByColumn = (colName) => (data) => {
     const cols = data?.data?.cols || [];
     const rows = data?.data?.rows || [];
     const monthIdx = findCol(cols, 'month');
     const valIdx = findCol(cols, colName);
     if (monthIdx < 0 || valIdx < 0) return null;
-    const sorted = monthSort(rows, monthIdx).filter(
+    let sorted = monthSort(rows, monthIdx).filter(
         (r) => numericOrNull(r[valIdx]) != null
     );
     if (sorted.length === 0) return null;
+    if (isPartialCurrentMonth(String(sorted[0][monthIdx])) && sorted.length > 1) {
+        sorted = sorted.slice(1);
+    }
     const latest = numericOrNull(sorted[0][valIdx]);
     const previous = sorted[1] ? numericOrNull(sorted[1][valIdx]) : null;
     const spark = sorted.slice(0, 7).reverse().map((r) => numericOrNull(r[valIdx]));
@@ -108,6 +124,33 @@ const KPIS = [
         parse: monthlyByColumn('avg_deposit'),
     },
     {
+        // Phase 2.2: BK-created card 827 — month / registrations
+        key: 'konibet_registrations',
+        brand: 'Konibet',
+        metric: '登録',
+        unit: 'count',
+        cardId: 827,
+        parse: monthlyByColumn('registrations'),
+    },
+    {
+        // Phase 2.2: BK-created card 826 — month / deposit_jpy / txns
+        // (raw bank_deposit_native, confirmed amount only)
+        key: 'sloten_deposit_jpy',
+        brand: 'Sloten',
+        metric: '入金',
+        unit: 'JPY',
+        cardId: 826,
+        parse: monthlyByColumn('deposit_jpy'),
+    },
+    {
+        key: 'sloten_deposit_txns',
+        brand: 'Sloten',
+        metric: '入金回数',
+        unit: 'count',
+        cardId: 826,
+        parse: monthlyByColumn('txns'),
+    },
+    {
         key: 'sloten_ggr_total_jpy',
         brand: 'Sloten',
         metric: 'GGR累計',
@@ -116,11 +159,29 @@ const KPIS = [
         parse: singleScalar,
     },
     {
+        // Phase 2.2: BK-created card 825 — month / deposit_jpy / deposits
+        // (DSC bank_deposit only — crypto/ec/paypay channels excluded for now)
+        key: 'dsc_deposit_jpy',
+        brand: 'DSC',
+        metric: '入金',
+        unit: 'JPY',
+        cardId: 825,
+        parse: monthlyByColumn('deposit_jpy'),
+    },
+    {
+        key: 'dsc_deposit_count',
+        brand: 'DSC',
+        metric: '入金件数',
+        unit: 'count',
+        cardId: 825,
+        parse: monthlyByColumn('deposits'),
+    },
+    {
         key: 'dsc_ggr_total_jpy',
         brand: 'DSC',
         metric: 'GGR累計',
         unit: 'JPY',
-        cardId: 40, // DSC Summary (JPY) — single row, total_ggr is column 5
+        cardId: 40, // DSC Summary (JPY) — single row cumulative GGR (sam_customers)
         parse: (data) => {
             const cols = data?.data?.cols || [];
             const rows = data?.data?.rows || [];
