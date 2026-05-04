@@ -34,12 +34,21 @@ const findCol = (cols, ...names) => {
 // "Sloten 入金 -99%" anomaly on May 1st when only one day of May is live.
 const PARTIAL_MONTH_CUTOFF_DAY = 5;
 
+const currentYm = () => {
+    const now = new Date();
+    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+};
+
 const isPartialCurrentMonth = (monthStr) => {
     const now = new Date();
     if (now.getUTCDate() > PARTIAL_MONTH_CUTOFF_DAY) return false;
-    const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-    return monthStr === ym;
+    return monthStr === currentYm();
 };
+
+// Source data sometimes contains future-dated typo rows (e.g. DSC bank_deposit
+// has "2026-12" entries in May). Drop anything strictly newer than the current
+// month so the "latest" tile reflects reality, not data-entry mistakes.
+const isFutureMonth = (monthStr) => String(monthStr) > currentYm();
 
 const monthlyByColumn = (colName) => (data) => {
     const cols = data?.data?.cols || [];
@@ -48,7 +57,7 @@ const monthlyByColumn = (colName) => (data) => {
     const valIdx = findCol(cols, colName);
     if (monthIdx < 0 || valIdx < 0) return null;
     let sorted = monthSort(rows, monthIdx).filter(
-        (r) => numericOrNull(r[valIdx]) != null
+        (r) => numericOrNull(r[valIdx]) != null && !isFutureMonth(r[monthIdx])
     );
     if (sorted.length === 0) return null;
     if (isPartialCurrentMonth(String(sorted[0][monthIdx])) && sorted.length > 1) {
@@ -159,8 +168,9 @@ const KPIS = [
         parse: singleScalar,
     },
     {
-        // Phase 2.2: BK-created card 825 — month / deposit_jpy / deposits
-        // (DSC bank_deposit only — crypto/ec/paypay channels excluded for now)
+        // Phase 2.3: card 825 expanded to UNION ALL across all 4 DSC deposit
+        // channels (bank_deposit + crypto_deposit + ec_deposit + paypay_deposit).
+        // April: ¥46.2M total (~3× the bank-only ¥15.2M previously reported).
         key: 'dsc_deposit_jpy',
         brand: 'DSC',
         metric: '入金',

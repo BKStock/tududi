@@ -165,17 +165,30 @@ const PulseView: React.FC = () => {
         return tiles.filter((k) => k.previous && Math.abs(deltaPct(k.value, k.previous)) >= ANOMALY_THRESHOLD);
     }, [tiles]);
 
-    // Primary lane: 4 most decision-critical Konibet metrics in fixed order.
-    const HERO_ORDER = ['GGR', '入金', 'Active', 'Players'];
-    const konibetTiles = tiles.filter((t) => t.brand === 'Konibet');
-    const heroTiles = HERO_ORDER
-        .map((m) => konibetTiles.find((t) => t.metric === m))
+    // Hero lane (Phase 2.4): brand-mixed top metrics — most decision-critical
+    // KPIs across all 3 brands, not just Konibet. Cash-in is the daily-pulse
+    // signal so prioritize 入金 across brands; one Konibet GGR for revenue lens.
+    const HERO_KEYS = [
+        'konibet_ggr_jpy',
+        'konibet_deposit_jpy',
+        'sloten_deposit_jpy',
+        'dsc_deposit_jpy',
+    ];
+    const heroTiles = HERO_KEYS
+        .map((k) => tiles.find((t) => t.key === k))
         .filter(Boolean) as KpiTile[];
     const heroKeys = new Set(heroTiles.map((t) => t.key));
-    const secondaryTiles = [
-        ...konibetTiles.filter((t) => !heroKeys.has(t.key)),
-        ...tiles.filter((t) => t.brand !== 'Konibet'),
-    ];
+    // Secondary tiles grouped by brand for clearer scan path.
+    const BRAND_ORDER: Array<KpiTile['brand'] | string> = ['Konibet', 'Sloten', 'DSC'];
+    const BRAND_STYLES: Record<string, { label: string; subtitle: string; accent: string }> = {
+        Konibet: { label: 'Konibet', subtitle: 'iGaming primary', accent: 'text-rose-600 dark:text-rose-400' },
+        Sloten:  { label: 'Sloten',  subtitle: 'iGaming secondary', accent: 'text-blue-600 dark:text-blue-400' },
+        DSC:     { label: 'DSC',     subtitle: '信用回収', accent: 'text-amber-600 dark:text-amber-400' },
+    };
+    const secondaryByBrand = BRAND_ORDER.map((brand) => ({
+        brand,
+        tiles: tiles.filter((t) => t.brand === brand && !heroKeys.has(t.key)),
+    })).filter((b) => b.tiles.length > 0);
 
     const handleQuickAction = (kpi: KpiTile, action: 'analyze' | 'investigate') => {
         const labels = {
@@ -271,8 +284,11 @@ const PulseView: React.FC = () => {
                     </div>
                 )}
 
-                <div className="mb-6">
-                    <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-3 px-1">PRIMARY · Konibet</h2>
+                <div className="mb-8">
+                    <div className="flex items-baseline justify-between mb-3 px-1">
+                        <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">PRIMARY · 3 brands cash-in</h2>
+                        <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500">月次・前月比</span>
+                    </div>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {heroTiles.map((k) => {
                             const d = deltaPct(k.value, k.previous);
@@ -280,22 +296,24 @@ const PulseView: React.FC = () => {
                             const trendUp = d >= 0;
                             const trendColor = isAnomaly ? (trendUp ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400')
                                 : (trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400');
-                            const sparkColor = isAnomaly ? '#ef4444' : trendUp ? '#10b981' : '#94a3b8';
+                            const sparkColor = isAnomaly ? '#ef4444' : trendUp ? '#10b981' : '#10b981';
+                            const brandAccent = BRAND_STYLES[k.brand]?.accent || 'text-gray-500';
                             return (
                                 <div key={k.key} className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 p-5 transition ${isAnomaly ? 'ring-rose-300 dark:ring-rose-800' : 'ring-gray-200 dark:ring-gray-700'}`}>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{k.metric}</span>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${brandAccent}`}>{k.brand}</span>
                                         {k.metric === 'GGR' || k.metric === '入金' || k.metric === '出金' ? <CurrencyYenIcon className="w-3.5 h-3.5 text-gray-300" />
-                                            : k.metric === 'Active' ? <UserGroupIcon className="w-3.5 h-3.5 text-gray-300" />
+                                            : k.metric === 'Active' || k.metric === 'Players' ? <UserGroupIcon className="w-3.5 h-3.5 text-gray-300" />
                                             : <ChartBarSquareIcon className="w-3.5 h-3.5 text-gray-300" />}
                                     </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{k.metric}</div>
                                     <div className="text-3xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight leading-none mb-2">
                                         {formatValue(k.value, k.unit)}
                                     </div>
                                     <div className={`flex items-center gap-1 text-xs font-mono ${trendColor} mb-3`}>
                                         {trendUp ? <ArrowTrendingUpIcon className="w-3.5 h-3.5" /> : <ArrowTrendingDownIcon className="w-3.5 h-3.5" />}
                                         <span className="font-semibold">{d > 0 ? '+' : ''}{d.toFixed(1)}%</span>
-                                        <span className="text-gray-400 dark:text-gray-500 ml-1">vs 前期</span>
+                                        <span className="text-gray-400 dark:text-gray-500 ml-1">vs 前月</span>
                                     </div>
                                     <Sparkline data={k.spark} color={sparkColor} />
                                 </div>
@@ -304,43 +322,56 @@ const PulseView: React.FC = () => {
                     </div>
                 </div>
 
-                {secondaryTiles.length > 0 && (
-                    <div>
-                        <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-3 px-1">SECONDARY · DSC / Sloten</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {secondaryTiles.map((k) => {
-                                const d = deltaPct(k.value, k.previous);
-                                const isAnomaly = Math.abs(d) >= ANOMALY_THRESHOLD;
-                                const trendUp = d >= 0;
-                                const trendColor = isAnomaly ? (trendUp ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400')
-                                    : (trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400');
-                                const sparkColor = isAnomaly ? '#ef4444' : trendUp ? '#10b981' : '#94a3b8';
-                                return (
-                                    <div key={k.key} className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 p-5 ${isAnomaly ? 'ring-rose-300 dark:ring-rose-800' : 'ring-gray-200 dark:ring-gray-700'}`}>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-xs font-mono text-gray-500 dark:text-gray-400 uppercase tracking-wide">{k.brand} · {k.metric}</span>
+                {secondaryByBrand.map(({ brand, tiles: brandTiles }) => {
+                    const meta = BRAND_STYLES[brand] || { label: brand as string, subtitle: '', accent: '' };
+                    return (
+                        <div key={brand as string} className="mb-6">
+                            <div className="flex items-baseline justify-between mb-3 px-1">
+                                <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                                    <span className={meta.accent + ' font-semibold'}>{meta.label}</span>
+                                    <span className="text-gray-400 dark:text-gray-500 ml-2">{meta.subtitle}</span>
+                                </h2>
+                                <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500">{brandTiles.length} metric{brandTiles.length > 1 ? 's' : ''}</span>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {brandTiles.map((k) => {
+                                    const d = deltaPct(k.value, k.previous);
+                                    const isAnomaly = Math.abs(d) >= ANOMALY_THRESHOLD;
+                                    const trendUp = d >= 0;
+                                    const trendColor = isAnomaly ? (trendUp ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400')
+                                        : (trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400');
+                                    const sparkColor = isAnomaly ? '#ef4444' : trendUp ? '#10b981' : '#94a3b8';
+                                    const isCumulative = k.metric.includes('累計') || k.previous === k.value;
+                                    return (
+                                        <div key={k.key} className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 p-4 ${isAnomaly ? 'ring-rose-300 dark:ring-rose-800' : 'ring-gray-200 dark:ring-gray-700'}`}>
+                                            <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">{k.metric}</div>
+                                            <div className="text-xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight leading-none mb-1.5">
+                                                {formatValue(k.value, k.unit)}
+                                            </div>
+                                            {isCumulative ? (
+                                                <div className="text-[10px] font-mono text-gray-400 dark:text-gray-500 mb-2">cumulative</div>
+                                            ) : (
+                                                <div className={`flex items-center gap-1 text-[11px] font-mono ${trendColor} mb-2`}>
+                                                    {trendUp ? <ArrowTrendingUpIcon className="w-3 h-3" /> : <ArrowTrendingDownIcon className="w-3 h-3" />}
+                                                    <span className="font-semibold">{d > 0 ? '+' : ''}{d.toFixed(1)}%</span>
+                                                </div>
+                                            )}
+                                            <Sparkline data={k.spark} color={sparkColor} />
                                         </div>
-                                        <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight leading-none mb-2">
-                                            {formatValue(k.value, k.unit)}
-                                        </div>
-                                        <div className={`flex items-center gap-1 text-xs font-mono ${trendColor} mb-3`}>
-                                            {trendUp ? <ArrowTrendingUpIcon className="w-3.5 h-3.5" /> : <ArrowTrendingDownIcon className="w-3.5 h-3.5" />}
-                                            <span className="font-semibold">{d > 0 ? '+' : ''}{d.toFixed(1)}%</span>
-                                        </div>
-                                        <Sparkline data={k.spark} color={sparkColor} />
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })}
 
                 <div className="mt-8 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 ring-1 ring-blue-200 dark:ring-blue-900 rounded-xl flex items-start gap-3">
                     <BoltIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 text-xs text-blue-900 dark:text-blue-200">
-                        <strong>Phase 2 (live)</strong> — Metabase API → tudidi cache (5min sync). Source of Record: <code className="px-1 bg-white/40 dark:bg-blue-950 rounded">metabase.slotenpromotion.com</code>.
+                        <strong>Live</strong> — Metabase → tudidi cache (5min sync) → Telegram alerts (±15% で @BKDesignbot push).
+                        Source of Record: <code className="px-1 bg-white/40 dark:bg-blue-950 rounded">metabase.slotenpromotion.com</code>.
                         {schedulerHealth && <> Scheduler: {schedulerHealth.enabled ? '✓ enabled' : '✗ disabled'}.</>}
-                        <strong className="ml-2">Phase 3</strong> で MCP tools (`get_casino_kpi`) 経由 Claude Code 横断クエリ予定。
+                        Claude Code から横断クエリ可能 (MCP tools: get_casino_kpi / query_metabase_native / etc.).
                     </div>
                 </div>
             </div>

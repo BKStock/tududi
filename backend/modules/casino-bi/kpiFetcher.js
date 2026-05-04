@@ -3,6 +3,7 @@
 const metabase = require('./metabaseClient');
 const { KPIS } = require('./kpiConfig');
 const { CasinoKpiSnapshot } = require('../../models');
+const anomalyNotifier = require('./anomalyNotifier');
 
 const cardCache = new Map();
 
@@ -40,7 +41,12 @@ const syncOne = async (kpi) => {
             return { key: kpi.key, ok: false, reason: 'parse-null' };
         }
         await persistSnapshot(kpi, parsed);
-        return { key: kpi.key, ok: true, value: parsed.value };
+        return {
+            key: kpi.key,
+            ok: true,
+            value: parsed.value,
+            previous: parsed.previous,
+        };
     } catch (err) {
         const msg = err?.response?.status
             ? `http ${err.response.status}`
@@ -60,15 +66,35 @@ const syncAll = async () => {
     }
     cardCache.clear();
     const results = [];
+    const fresh = [];
     for (const kpi of KPIS) {
         // serial — keeps load on Metabase low and avoids burst rate-limit
-        results.push(await syncOne(kpi));
+        const r = await syncOne(kpi);
+        results.push(r);
+        if (r.ok) {
+            fresh.push({
+                key: kpi.key,
+                brand: kpi.brand,
+                metric: kpi.metric,
+                unit: kpi.unit,
+                value: r.value,
+                previous: r.previous,
+            });
+        }
+    }
+    let notify = null;
+    try {
+        notify = await anomalyNotifier.checkAndNotify(fresh);
+    } catch (e) {
+        // never let notification failure block sync result
+        notify = { ok: false, reason: e?.message || 'notifier threw' };
     }
     return {
         ok: true,
         total: results.length,
         success: results.filter((r) => r.ok).length,
         failed: results.filter((r) => !r.ok),
+        notified: notify,
         startedAt: new Date().toISOString(),
     };
 };

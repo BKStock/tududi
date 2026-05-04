@@ -45,4 +45,43 @@ async function getBotInfo(token) {
     });
 }
 
-module.exports = { getBotInfo };
+// Generic sendMessage helper (Markdown by default).
+async function sendMessage(token, chatId, text, opts = {}) {
+    return new Promise((resolve) => {
+        const payload = JSON.stringify({
+            chat_id: chatId,
+            text,
+            parse_mode: opts.parse_mode || 'Markdown',
+            disable_web_page_preview: opts.disable_web_page_preview ?? true,
+            ...(opts.reply_markup ? { reply_markup: opts.reply_markup } : {}),
+        });
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        const req = require('https').request(
+            url,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(payload),
+                },
+            },
+            (res) => {
+                let data = '';
+                res.on('data', (c) => (data += c));
+                res.on('end', () => {
+                    try {
+                        const j = JSON.parse(data);
+                        resolve(j.ok ? j.result : null);
+                    } catch {
+                        resolve(null);
+                    }
+                });
+            }
+        );
+        req.on('error', () => resolve(null));
+        req.write(payload);
+        req.end();
+    });
+}
+
+module.exports = { getBotInfo, sendMessage };
